@@ -9,3 +9,6 @@ agent/config.json
 data/
 *.log
 .DS_Store
+
+.vercel
+.env*

@@ -47,6 +47,20 @@ pwsh -ExecutionPolicy Bypass -File installer\build-portable.ps1
 "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\AgentPrint.iss
 ```
 
+## Phone access (same WiFi / hotspot)
+
+The phone cannot use `localhost` — it must use the printer PC's LAN IP:
+
+1. On the printer PC, allow inbound port 3000 once (admin click):
+   `netsh advfirewall firewall add rule name="AgentPrint Backend 3000" dir=in action=allow protocol=TCP localport=3000`
+2. Find the PC's WiFi IP (`ipconfig`, e.g. `192.168.43.2`) and on the PC open
+   `http://192.168.43.2:3000/admin.html?office=YOUR-CODE` — **important:** open it
+   via the IP, not localhost, so the QR stickers encode an address the phone can reach.
+3. Connect the phone to the same WiFi/hotspot, scan the QR → upload → collect papers.
+
+For guests on mobile data (outside the WiFi), expose the PC with ngrok
+(`ngrok http 3000`) and use the `https://....ngrok.io` URL instead of the LAN IP.
+
 ## Deploy the cloud backend (multi-office SaaS)
 
 ### Option A — Vercel (frontend + API, instant print via polling)

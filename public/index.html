@@ -2,67 +2,125 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="AgentPrint — walk-up office printing. Guests scan a QR sticker, send a file, collect their papers. No app, no USB sticks, no manual work.">
+<meta name="theme-color" content="#0d1526">
 <title>AgentPrint — Scan. Send. Collect.</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖨️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
 <div class="wrap">
-  <div class="top">
-    <div class="logo"><span class="mark">🖨️</span> AgentPrint</div>
-    <div class="nav">
+  <header class="top">
+    <a class="logo" href="/"><span class="reg" aria-hidden="true"></span>AgentPrint</a>
+    <nav class="nav" aria-label="Main">
       <a class="btn ghost" href="/admin.html">Office dashboard</a>
-      <a class="btn primary" href="#start">Get your office code</a>
-    </div>
-  </div>
+      <a class="btn primary" href="#start">Get an office code</a>
+    </nav>
+  </header>
 
-  <div class="hero">
-    <div>
-      <span class="pill">● Multi-office SaaS · works on Vercel + any printer PC</span>
-      <h1>Walk up. Scan the QR.<br>Collect your papers.</h1>
-      <p>No app to install. No USB sticks. No asking reception. Guests scan the sticker on the printer, send a PDF or Word file from their phone, and the office PC prints it automatically in seconds.</p>
-      <div class="steps">
-        <div class="step"><div class="n">📷</div><b>1. Scan</b><span>QR sticker on the printer</span></div>
-        <div class="step"><div class="n">📤</div><b>2. Send</b><span>Upload PDF, image, DOCX, PPTX, XLSX</span></div>
-        <div class="step"><div class="n">📄</div><b>3. Collect</b><span>Agent PC auto-prints instantly</span></div>
+  <main>
+    <div class="hero">
+      <div>
+        <span class="eyebrow"><span class="cmyk" aria-hidden="true"></span>Walk-up office printing</span>
+        <h1>Scan. Send. <span class="u">Collect.</span></h1>
+        <p class="lede">A guest walks up to the printer, scans the sticker with any phone camera, and sends a PDF, photo, or Word file. The office PC prints it on its own in seconds. No app to install. No USB sticks. Nobody has to forward an email to reception.</p>
+        <div class="hero-cta">
+          <a class="btn primary" href="#start">Get an office code</a>
+          <a class="btn" href="/admin.html">Open the dashboard</a>
+        </div>
+      </div>
+      <div>
+        <div class="ticket" aria-label="Example print ticket">
+          <div class="cmyk" aria-hidden="true"></div>
+          <div class="ticket-body">
+            <div class="row" style="justify-content:space-between">
+              <span class="eyebrow"><span class="reg" aria-hidden="true"></span>Print ticket · <span class="mono">A3F9C1</span></span>
+            </div>
+            <dl style="margin:12px 0 0">
+              <div class="ticket-row"><dt>Printer</dt><dd>Reception · Ground floor</dd></div>
+              <div class="ticket-row"><dt>File</dt><dd class="mono">Q3-report.pdf</dd></div>
+              <div class="ticket-row"><dt>Copies · Ink</dt><dd>2 × · Black &amp; white</dd></div>
+              <div class="ticket-row"><dt>Sent by</dt><dd>Guest phone · 09:41</dd></div>
+            </dl>
+            <div class="perf" aria-hidden="true"></div>
+          </div>
+          <div class="ticket-stub">
+            <span class="muted small">Picked up at the tray — no clicks on the PC.</span>
+            <span class="stamp">Printed</span>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="card" id="start">
-      <h3 style="margin-top:0">🏢 Register your office (free)</h3>
-      <p class="muted small">One office code serves all your printers. Give the code to each printer PC during agent setup.</p>
-      <label>Office name</label>
-      <input id="officeName" placeholder="e.g. Acme Kigali HQ">
-      <div style="height:12px"></div>
-      <button class="btn primary big" onclick="createOffice()">Create office code →</button>
-      <div id="created" style="margin-top:14px"></div>
-      <hr style="border:none;border-top:1px solid var(--line);margin:16px 0">
-      <p class="muted small">Already have a code?</p>
-      <div class="row">
-        <input id="haveCode" placeholder="e.g. ACME-4821" style="flex:1;min-width:140px">
-        <button class="btn" onclick="openDash()">Open →</button>
+
+    <section class="section" aria-label="How it works">
+      <div class="grid g3">
+        <div class="stub"><div class="no">Step 01</div><h3>Scan the sticker</h3><p>Every printer gets a QR sticker. Any phone camera opens the print page — nothing to install.</p></div>
+        <div class="stub"><div class="no">Step 02</div><h3>Send the file</h3><p>PDF, photos, Word, PowerPoint, Excel. Pick copies and colour, then press print.</p></div>
+        <div class="stub"><div class="no">Step 03</div><h3>Collect the pages</h3><p>The desktop agent on the printer PC prints automatically. Walk over and pick them up.</p></div>
       </div>
-    </div>
-  </div>
+    </section>
 
-  <div class="grid g3">
-    <div class="card"><h3>🖥️ Desktop agent</h3><p class="muted">Tiny app on the printer PC. Polls the cloud every 2.5s, prints via the Windows spooler, reports back. <code>agent/install-agent.bat</code> sets it up in 2 minutes.</p></div>
-    <div class="card"><h3>☁️ Cloud backend</h3><p class="muted">One Vercel deployment serves <b>any number of offices</b> — queues are isolated per <code>officeCode</code>. Deploy with <code>vercel</code>, point agents at the URL, done.</p></div>
-    <div class="card"><h3>📱 Guest page</h3><p class="muted">Mobile-first upload page per printer. Copies, colour/B&W, live status: <i>Queued → Printing → Ready for pickup</i>.</p></div>
-  </div>
+    <section class="section" id="start" aria-label="Register your office">
+      <div class="grid g2">
+        <div class="card">
+          <span class="eyebrow"><span class="reg" aria-hidden="true"></span>For offices · free</span>
+          <h2 style="margin-top:.4em">One code runs all your printers</h2>
+          <p class="muted">Register the office once. Each printer PC is set up with the same code plus its own printer name — one cloud backend keeps every queue separate.</p>
+          <label for="officeName">Office name</label>
+          <input id="officeName" placeholder="e.g. Acme Kigali HQ" autocomplete="organization">
+          <div style="height:12px"></div>
+          <button class="btn primary big" id="createBtn" onclick="createOffice()">Create office code</button>
+          <div id="created" style="margin-top:14px"></div>
+        </div>
+        <div class="card">
+          <span class="eyebrow"><span class="reg" aria-hidden="true"></span>Already registered</span>
+          <h2 style="margin-top:.4em">Manage printers &amp; queues</h2>
+          <p class="muted">Print QR stickers, watch the live queue, and see which printer PCs are online.</p>
+          <label for="haveCode">Office code</label>
+          <div class="row">
+            <input id="haveCode" placeholder="e.g. ACME-4821" style="flex:1;min-width:150px" autocomplete="off">
+            <button class="btn" onclick="openDash()">Open</button>
+          </div>
+          <hr class="hr">
+          <h3 style="font-size:17px">What runs where</h3>
+          <p class="small muted" style="margin-bottom:.4em"><b>Printer PC</b> — the Agent app polls every few seconds and prints through the Windows spooler. Set up once with <span class="mono">install-agent.bat</span>.</p>
+          <p class="small muted" style="margin-bottom:.4em"><b>Cloud or office server</b> — holds the queues. Use the hosted service, or run <span class="mono">server.js</span> on any always-on PC.</p>
+          <p class="small muted" style="margin:0"><b>Guest phone</b> — just the camera. No accounts, no app.</p>
+        </div>
+      </div>
+    </section>
+  </main>
 
-  <footer>AgentPrint · open instant print · PDF · JPG/PNG · DOCX · PPTX · XLSX</footer>
+  <footer>
+    <div class="cmyk" aria-hidden="true"></div>
+    AgentPrint · PDF · photos · Word · PowerPoint · Excel · instant, unattended printing
+  </footer>
 </div>
 <script>
+function escapeHtml(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 async function createOffice(){
   const name = document.getElementById('officeName').value || 'My Office';
-  const r = await fetch('/api/offices',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})});
-  const d = await r.json();
-  document.getElementById('created').innerHTML =
-    `<div class="card" style="background:#0e2a1c">✅ Office <b>${d.office.name}</b> created!<br><br>Office code: <code style="font-size:20px">${d.office.code}</code><br><span class="muted small">First printer: <code>${d.printer.printerId}</code></span><br><br><a class="btn primary" href="/admin.html?office=${d.office.code}">Open dashboard →</a></div>`;
+  const btn = document.getElementById('createBtn');
+  btn.disabled = true;
+  try {
+    const r = await fetch('/api/offices',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})});
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Could not create office');
+    document.getElementById('created').innerHTML =
+      `<div class="card" style="background:var(--ok-bg);border-color:#9ed9bd">Your office <b>${escapeHtml(d.office.name)}</b> is ready.<br><br>Office code: <code style="font-size:21px">${escapeHtml(d.office.code)}</code><br><span class="muted small">First printer: <code>${escapeHtml(d.printer.printerId)}</code> — add more in the dashboard.</span><br><br><a class="btn primary" href="/admin.html?office=${encodeURIComponent(d.office.code)}">Open dashboard</a></div>`;
+  } catch(e) {
+    document.getElementById('created').innerHTML = `<div class="status show err">${e.message}</div>`;
+  } finally { btn.disabled = false; }
 }
 function openDash(){
   const c = document.getElementById('haveCode').value.trim();
   if(c) location.href = '/admin.html?office=' + encodeURIComponent(c);
 }
+document.getElementById('haveCode').addEventListener('keydown', e => { if (e.key === 'Enter') openDash(); });
+document.getElementById('officeName').addEventListener('keydown', e => { if (e.key === 'Enter') createOffice(); });
 </script>
 </body>
 </html>

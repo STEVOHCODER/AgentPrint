@@ -2,97 +2,134 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0d1526">
 <title>Office dashboard — AgentPrint</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖨️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/styles.css">
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 </head>
 <body>
 <div class="wrap">
-  <div class="top">
-    <div class="logo"><span class="mark">🖨️</span> AgentPrint <span class="muted small">office dashboard</span></div>
-    <div class="nav"><a class="btn ghost" href="/">Home</a></div>
-  </div>
+  <header class="top">
+    <a class="logo" href="/"><span class="reg" aria-hidden="true"></span>AgentPrint</a>
+    <nav class="nav" aria-label="Main"><a class="btn ghost" href="/">Home</a></nav>
+  </header>
 
-  <div class="card">
-    <div class="row">
-      <input id="office" placeholder="Office code e.g. ACME-4821" style="flex:1;min-width:180px">
-      <button class="btn primary" onclick="loadAll()">Load →</button>
-    </div>
-    <p class="muted small">Find your code on the home page after registering. Every printer PC uses this same code + its own printer ID.</p>
-  </div>
+  <main>
+    <span class="eyebrow"><span class="cmyk" aria-hidden="true"></span>Office dashboard</span>
+    <h1 style="font-size:clamp(30px,4.5vw,44px);margin:.3em 0 .2em">Printers, stickers &amp; live queue</h1>
+    <p class="lede" style="font-size:16px">Print each QR sticker and put it on its printer. Guests scan it with any phone camera.</p>
 
-  <div style="height:16px"></div>
-  <div class="grid g2">
-    <div class="card">
-      <h3 style="margin-top:0">🖨️ Printers & QR stickers</h3>
-      <div id="printers"><p class="muted">Enter your office code above.</p></div>
-      <hr style="border:none;border-top:1px solid var(--line);margin:14px 0">
-      <h4>Add printer</h4>
-      <label>Name</label><input id="pname" placeholder="e.g. Reception Printer">
-      <label>Location</label><input id="ploc" placeholder="e.g. Ground floor, front desk">
-      <div style="height:10px"></div>
-      <button class="btn" onclick="addPrinter()">+ Add printer</button>
+    <div class="card" style="margin-top:20px">
+      <div class="row">
+        <input id="office" placeholder="Office code, e.g. ACME-4821" style="flex:1;min-width:190px" autocomplete="off">
+        <button class="btn primary" onclick="loadAll()">Load office</button>
+      </div>
+      <p class="muted small" style="margin:.8em 0 0">The code from registration day. Every printer PC signs in with this same code.</p>
     </div>
-    <div class="card">
-      <h3 style="margin-top:0">📋 Live print queue</h3>
-      <div id="jobs"><p class="muted">No jobs yet.</p></div>
+
+    <div style="height:16px"></div>
+    <div class="grid g2">
+      <section aria-label="Printers">
+        <h2 style="font-size:22px">Printers &amp; stickers</h2>
+        <div id="printers"><div class="empty">Enter your office code above to see printers.</div></div>
+        <div class="card">
+          <h3 style="font-size:17px;margin-top:0">Add a printer</h3>
+          <label for="pname">Printer name</label>
+          <input id="pname" placeholder="e.g. Reception printer">
+          <label for="ploc">Where it stands</label>
+          <input id="ploc" placeholder="e.g. Ground floor, front desk">
+          <div style="height:12px"></div>
+          <button class="btn" onclick="addPrinter()">Add printer</button>
+        </div>
+      </section>
+      <section aria-label="Live queue">
+        <h2 style="font-size:22px">Live queue</h2>
+        <div class="card" style="padding:16px 18px">
+          <div id="jobs"><div class="empty">No jobs yet — scan a sticker to send the first file.</div></div>
+        </div>
+      </section>
     </div>
-  </div>
-  <footer>Tip: right-click a QR → print it, stick it on the printer. Guests scan with any phone camera.</footer>
+  </main>
+
+  <footer>
+    <div class="cmyk" aria-hidden="true"></div>
+    Tip: right-click a sticker → print it. Guests need nothing but their camera.
+  </footer>
 </div>
 <script>
 const $ = id => document.getElementById(id);
-const code = () => ($('office').value || new URLSearchParams(location.search).get('office') || '').trim();
-if(new URLSearchParams(location.search).get('office')){ $('office').value = new URLSearchParams(location.search).get('office'); loadAll(); }
+const code = () => ($('office').value || new URLSearchParams(location.search).get('office') || '').trim().toUpperCase();
+if (new URLSearchParams(location.search).get('office')) { $('office').value = code(); loadAll(); }
+$('office').addEventListener('keydown', e => { if (e.key === 'Enter') loadAll(); });
 
-async function loadAll(){ if(!code()) return alert('Enter office code'); await Promise.all([loadPrinters(), loadJobs()]); listen(); }
+function escapeHtml(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+async function loadAll(){ if (!code()) return alert('Enter your office code first.'); await Promise.all([loadPrinters(), loadJobs()]); listen(); }
 
 async function loadPrinters(){
-  const r = await fetch('/api/offices/'+encodeURIComponent(code())+'/printers');
-  const list = await r.json();
-  $('printers').innerHTML = list.map(p=>{
-    const page = `${location.origin}/print.html?office=${encodeURIComponent(p.officeCode)}&printer=${encodeURIComponent(p.printerId)}`;
-    const qr = `/api/printers/${encodeURIComponent(p.officeCode)}/${encodeURIComponent(p.printerId)}/qr.png`;
-    return `<div class="card" style="margin-bottom:12px">
-      <b>${p.name}</b> <span class="muted small">${p.printerId} · ${p.location||''}</span><br>
-      <span class="dot ${p.online?'on':'off'}"></span><span class="muted small">${p.online?'Agent online':'Agent offline — start agent on printer PC'}</span>
-      <div class="row" style="margin-top:10px;align-items:center">
-        <span class="qr"><img src="${qr}" width="120" height="120" alt="QR"></span>
-        <div style="flex:1;min-width:160px">
-          <div class="small muted">Guest link:</div><code class="small">${page}</code>
-          <div class="row" style="margin-top:8px">
-            <a class="btn" href="${qr}" download="QR-${p.printerId}.png">⬇ QR</a>
-            <a class="btn" href="${page}" target="_blank">Open guest page</a>
+  const box = $('printers');
+  try {
+    const r = await fetch('/api/offices/' + encodeURIComponent(code()) + '/printers');
+    if (!r.ok) throw new Error('unknown office');
+    const list = await r.json();
+    if (!list.length) { box.innerHTML = '<div class="empty">No printers yet — add the first one below.</div>'; return; }
+    box.innerHTML = list.map(p => {
+      const page = `${location.origin}/print.html?office=${encodeURIComponent(p.officeCode)}&printer=${encodeURIComponent(p.printerId)}`;
+      const qr = `/api/printers/${encodeURIComponent(p.officeCode)}/${encodeURIComponent(p.printerId)}/qr.png`;
+      return `<article class="sticker">
+        <div class="sticker-head"><span class="reg" aria-hidden="true"></span><h4>${escapeHtml(p.name)}</h4><code>${escapeHtml(p.printerId)}</code></div>
+        <p class="muted small" style="margin:0 0 10px"><span class="dot ${p.online ? 'on' : 'off'}" aria-hidden="true"></span>${p.online ? 'Agent online — prints automatically' : 'Agent offline — start the Agent app on the printer PC'}${p.location ? ' · ' + escapeHtml(p.location) : ''}</p>
+        <div class="sticker-body">
+          <span class="qr"><img src="${qr}" width="132" height="132" alt="QR sticker for ${escapeHtml(p.name)}"></span>
+          <div style="flex:1;min-width:170px">
+            <div class="small muted">Guest link</div>
+            <div class="small" style="overflow-wrap:anywhere"><code>${escapeHtml(page)}</code></div>
+            <div class="row" style="margin-top:10px">
+              <a class="btn small" href="${qr}" download="QR-${escapeHtml(p.printerId)}.png">Download sticker</a>
+              <a class="btn small ghost" href="${page}" target="_blank" rel="noopener">Open guest page</a>
+            </div>
           </div>
-        </div>
-      </div></div>`;
-  }).join('') || '<p class="muted">No printers.</p>';
+        </div></article>`;
+    }).join('');
+  } catch(e) { box.innerHTML = '<div class="empty">Office code not recognised. Check the code and try again.</div>'; }
 }
+
 async function addPrinter(){
+  if (!code()) return alert('Enter your office code first.');
   const name = $('pname').value || 'Printer', location = $('ploc').value || '';
-  const r = await fetch('/api/printers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({officeCode:code(),name,location})});
-  if(!r.ok){ alert('Failed — check office code'); return; }
-  $('pname').value=''; $('ploc').value=''; loadPrinters();
+  const r = await fetch('/api/printers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ officeCode: code(), name, location }) });
+  if (!r.ok) { alert('Could not add the printer — check the office code.'); return; }
+  $('pname').value = ''; $('ploc').value = '';
+  loadPrinters();
 }
+
 async function loadJobs(){
-  const r = await fetch('/api/offices/'+encodeURIComponent(code())+'/jobs');
-  const list = await r.json();
-  $('jobs').innerHTML = list.length ? `<table><tr><th>File</th><th>Printer</th><th>Status</th></tr>${list.map(j=>
-    `<tr><td>${j.filename}<br><span class="muted small">${j.sender} · ${j.copies}x · ${new Date(j.createdAt).toLocaleTimeString()}</span></td><td class="small">${j.printerId}</td><td><span class="badge b-${j.status}">${j.status}</span></td></tr>`).join('')}</table>`
-    : '<p class="muted">No jobs yet — scan a QR to test.</p>';
+  const box = $('jobs');
+  try {
+    const r = await fetch('/api/offices/' + encodeURIComponent(code()) + '/jobs');
+    if (!r.ok) return;
+    const list = await r.json();
+    if (!list.length) { box.innerHTML = '<div class="empty">No jobs yet — scan a sticker to send the first file.</div>'; return; }
+    box.innerHTML = `<table><thead><tr><th>File</th><th>Printer</th><th>Status</th></tr></thead><tbody>${list.map(j =>
+      `<tr><td><b>${escapeHtml(j.filename)}</b><br><span class="muted small">${escapeHtml(j.sender)} · ${j.copies}× · ${j.color ? 'Colour' : 'B/W'} · ${new Date(j.createdAt).toLocaleTimeString()}</span><br><span class="mono" style="font-size:11.5px">${escapeHtml(j.id)}</span></td><td class="small">${escapeHtml(j.printerId)}</td><td><span class="badge b-${j.status}">${j.status}</span></td></tr>`).join('')}</tbody></table>`;
+  } catch(_) {}
 }
-let socket = null;
+
+let socket = null, poller = null;
 function listen(){
-  try{
-    if(socket) socket.disconnect();
+  try {
+    if (socket) socket.disconnect();
+    if (poller) clearInterval(poller);
     socket = io();
-    // join all printer rooms for live queue refresh
-    fetch('/api/offices/'+encodeURIComponent(code())+'/printers').then(r=>r.json()).then(list=>{
-      list.forEach(p=>socket.emit('join',{officeCode:p.officeCode,printerId:p.printerId,role:'admin'}));
-    });
+    fetch('/api/offices/' + encodeURIComponent(code()) + '/printers')
+      .then(r => r.json()).then(list => (list || []).forEach(p => socket.emit('join', { officeCode: p.officeCode, printerId: p.printerId, role: 'admin' })))
+      .catch(() => {});
     socket.on('job:new', loadJobs); socket.on('job:update', loadJobs); socket.on('job:claimed', loadJobs);
-  }catch(_){}
-  setInterval(loadJobs, 5000);
+  } catch(_) {}
+  poller = setInterval(() => { loadJobs(); }, 5000);
 }
 </script>
 </body>

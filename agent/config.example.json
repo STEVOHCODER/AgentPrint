@@ -1,0 +1,9 @@
+{
+  "backendUrl": "https://your-app.vercel.app",
+  "officeCode": "ACME-1234",
+  "printerId": "reception",
+  "printerName": "",
+  "pollIntervalMs": 2500,
+  "dashboardPort": 39500,
+  "autoPrint": true
+}

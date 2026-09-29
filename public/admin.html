@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Office dashboard — AgentPrint</title>
+<link rel="stylesheet" href="/styles.css">
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="logo"><span class="mark">🖨️</span> AgentPrint <span class="muted small">office dashboard</span></div>
+    <div class="nav"><a class="btn ghost" href="/">Home</a></div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <input id="office" placeholder="Office code e.g. ACME-4821" style="flex:1;min-width:180px">
+      <button class="btn primary" onclick="loadAll()">Load →</button>
+    </div>
+    <p class="muted small">Find your code on the home page after registering. Every printer PC uses this same code + its own printer ID.</p>
+  </div>
+
+  <div style="height:16px"></div>
+  <div class="grid g2">
+    <div class="card">
+      <h3 style="margin-top:0">🖨️ Printers & QR stickers</h3>
+      <div id="printers"><p class="muted">Enter your office code above.</p></div>
+      <hr style="border:none;border-top:1px solid var(--line);margin:14px 0">
+      <h4>Add printer</h4>
+      <label>Name</label><input id="pname" placeholder="e.g. Reception Printer">
+      <label>Location</label><input id="ploc" placeholder="e.g. Ground floor, front desk">
+      <div style="height:10px"></div>
+      <button class="btn" onclick="addPrinter()">+ Add printer</button>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">📋 Live print queue</h3>
+      <div id="jobs"><p class="muted">No jobs yet.</p></div>
+    </div>
+  </div>
+  <footer>Tip: right-click a QR → print it, stick it on the printer. Guests scan with any phone camera.</footer>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const code = () => ($('office').value || new URLSearchParams(location.search).get('office') || '').trim();
+if(new URLSearchParams(location.search).get('office')){ $('office').value = new URLSearchParams(location.search).get('office'); loadAll(); }
+
+async function loadAll(){ if(!code()) return alert('Enter office code'); await Promise.all([loadPrinters(), loadJobs()]); listen(); }
+
+async function loadPrinters(){
+  const r = await fetch('/api/offices/'+encodeURIComponent(code())+'/printers');
+  const list = await r.json();
+  $('printers').innerHTML = list.map(p=>{
+    const page = `${location.origin}/print.html?office=${encodeURIComponent(p.officeCode)}&printer=${encodeURIComponent(p.printerId)}`;
+    const qr = `/api/printers/${encodeURIComponent(p.officeCode)}/${encodeURIComponent(p.printerId)}/qr.png`;
+    return `<div class="card" style="margin-bottom:12px">
+      <b>${p.name}</b> <span class="muted small">${p.printerId} · ${p.location||''}</span><br>
+      <span class="dot ${p.online?'on':'off'}"></span><span class="muted small">${p.online?'Agent online':'Agent offline — start agent on printer PC'}</span>
+      <div class="row" style="margin-top:10px;align-items:center">
+        <span class="qr"><img src="${qr}" width="120" height="120" alt="QR"></span>
+        <div style="flex:1;min-width:160px">
+          <div class="small muted">Guest link:</div><code class="small">${page}</code>
+          <div class="row" style="margin-top:8px">
+            <a class="btn" href="${qr}" download="QR-${p.printerId}.png">⬇ QR</a>
+            <a class="btn" href="${page}" target="_blank">Open guest page</a>
+          </div>
+        </div>
+      </div></div>`;
+  }).join('') || '<p class="muted">No printers.</p>';
+}
+async function addPrinter(){
+  const name = $('pname').value || 'Printer', location = $('ploc').value || '';
+  const r = await fetch('/api/printers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({officeCode:code(),name,location})});
+  if(!r.ok){ alert('Failed — check office code'); return; }
+  $('pname').value=''; $('ploc').value=''; loadPrinters();
+}
+async function loadJobs(){
+  const r = await fetch('/api/offices/'+encodeURIComponent(code())+'/jobs');
+  const list = await r.json();
+  $('jobs').innerHTML = list.length ? `<table><tr><th>File</th><th>Printer</th><th>Status</th></tr>${list.map(j=>
+    `<tr><td>${j.filename}<br><span class="muted small">${j.sender} · ${j.copies}x · ${new Date(j.createdAt).toLocaleTimeString()}</span></td><td class="small">${j.printerId}</td><td><span class="badge b-${j.status}">${j.status}</span></td></tr>`).join('')}</table>`
+    : '<p class="muted">No jobs yet — scan a QR to test.</p>';
+}
+let socket = null;
+function listen(){
+  try{
+    if(socket) socket.disconnect();
+    socket = io();
+    // join all printer rooms for live queue refresh
+    fetch('/api/offices/'+encodeURIComponent(code())+'/printers').then(r=>r.json()).then(list=>{
+      list.forEach(p=>socket.emit('join',{officeCode:p.officeCode,printerId:p.printerId,role:'admin'}));
+    });
+    socket.on('job:new', loadJobs); socket.on('job:update', loadJobs); socket.on('job:claimed', loadJobs);
+  }catch(_){}
+  setInterval(loadJobs, 5000);
+}
+</script>
+</body>
+</html>

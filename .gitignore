@@ -1,0 +1,11 @@
+node_modules/
+dist/
+installer/Output/
+.vercel/
+uploads/*
+!uploads/.gitkeep
+agent/jobs/
+agent/config.json
+data/
+*.log
+.DS_Store

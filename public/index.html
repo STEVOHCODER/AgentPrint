@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AgentPrint — Scan. Send. Collect.</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="logo"><span class="mark">🖨️</span> AgentPrint</div>
+    <div class="nav">
+      <a class="btn ghost" href="/admin.html">Office dashboard</a>
+      <a class="btn primary" href="#start">Get your office code</a>
+    </div>
+  </div>
+
+  <div class="hero">
+    <div>
+      <span class="pill">● Multi-office SaaS · works on Vercel + any printer PC</span>
+      <h1>Walk up. Scan the QR.<br>Collect your papers.</h1>
+      <p>No app to install. No USB sticks. No asking reception. Guests scan the sticker on the printer, send a PDF or Word file from their phone, and the office PC prints it automatically in seconds.</p>
+      <div class="steps">
+        <div class="step"><div class="n">📷</div><b>1. Scan</b><span>QR sticker on the printer</span></div>
+        <div class="step"><div class="n">📤</div><b>2. Send</b><span>Upload PDF, image, DOCX, PPTX, XLSX</span></div>
+        <div class="step"><div class="n">📄</div><b>3. Collect</b><span>Agent PC auto-prints instantly</span></div>
+      </div>
+    </div>
+    <div class="card" id="start">
+      <h3 style="margin-top:0">🏢 Register your office (free)</h3>
+      <p class="muted small">One office code serves all your printers. Give the code to each printer PC during agent setup.</p>
+      <label>Office name</label>
+      <input id="officeName" placeholder="e.g. Acme Kigali HQ">
+      <div style="height:12px"></div>
+      <button class="btn primary big" onclick="createOffice()">Create office code →</button>
+      <div id="created" style="margin-top:14px"></div>
+      <hr style="border:none;border-top:1px solid var(--line);margin:16px 0">
+      <p class="muted small">Already have a code?</p>
+      <div class="row">
+        <input id="haveCode" placeholder="e.g. ACME-4821" style="flex:1;min-width:140px">
+        <button class="btn" onclick="openDash()">Open →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid g3">
+    <div class="card"><h3>🖥️ Desktop agent</h3><p class="muted">Tiny app on the printer PC. Polls the cloud every 2.5s, prints via the Windows spooler, reports back. <code>agent/install-agent.bat</code> sets it up in 2 minutes.</p></div>
+    <div class="card"><h3>☁️ Cloud backend</h3><p class="muted">One Vercel deployment serves <b>any number of offices</b> — queues are isolated per <code>officeCode</code>. Deploy with <code>vercel</code>, point agents at the URL, done.</p></div>
+    <div class="card"><h3>📱 Guest page</h3><p class="muted">Mobile-first upload page per printer. Copies, colour/B&W, live status: <i>Queued → Printing → Ready for pickup</i>.</p></div>
+  </div>
+
+  <footer>AgentPrint · open instant print · PDF · JPG/PNG · DOCX · PPTX · XLSX</footer>
+</div>
+<script>
+async function createOffice(){
+  const name = document.getElementById('officeName').value || 'My Office';
+  const r = await fetch('/api/offices',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})});
+  const d = await r.json();
+  document.getElementById('created').innerHTML =
+    `<div class="card" style="background:#0e2a1c">✅ Office <b>${d.office.name}</b> created!<br><br>Office code: <code style="font-size:20px">${d.office.code}</code><br><span class="muted small">First printer: <code>${d.printer.printerId}</code></span><br><br><a class="btn primary" href="/admin.html?office=${d.office.code}">Open dashboard →</a></div>`;
+}
+function openDash(){
+  const c = document.getElementById('haveCode').value.trim();
+  if(c) location.href = '/admin.html?office=' + encodeURIComponent(c);
+}
+</script>
+</body>
+</html>

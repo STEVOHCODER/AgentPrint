@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Print here — AgentPrint</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="wrap" style="max-width:560px">
+  <div class="top">
+    <div class="logo"><span class="mark">🖨️</span> AgentPrint</div>
+    <a class="btn ghost" href="/">Home</a>
+  </div>
+
+  <div class="card">
+    <span class="pill" id="printerPill">📍 loading printer…</span>
+    <h2 style="margin:.4em 0">Send file to this printer</h2>
+    <p class="muted small">PDF, JPG/PNG, DOCX, PPTX, XLSX · up to 25 MB · prints automatically — just collect your papers.</p>
+
+    <label>Your name (so staff can stack papers)</label>
+    <input id="sender" placeholder="e.g. Steven" autocomplete="name">
+
+    <label>File</label>
+    <div class="drop" id="drop">📁 Tap to choose or drop file here<div class="muted small" id="fname">No file yet</div></div>
+    <input type="file" id="file" hidden accept=".pdf,.jpg,.jpeg,.png,.webp,.txt,.doc,.docx,.ppt,.pptx,.xls,.xlsx">
+
+    <div class="grid g2" style="margin-top:6px">
+      <div><label>Copies</label>
+        <div class="stepper"><button class="btn" onclick="chCopies(-1)">−</button><b id="copies" style="font-size:22px;min-width:30px;text-align:center">1</b><button class="btn" onclick="chCopies(1)">+</button></div>
+      </div>
+      <div><label>Mode</label>
+        <div class="toggle"><button class="btn sel" id="bwBtn" onclick="setColor(false)">B/W</button><button class="btn" id="cBtn" onclick="setColor(true)">Colour</button></div>
+      </div>
+    </div>
+
+    <div style="height:16px"></div>
+    <button class="btn primary big" id="go" onclick="send()">🖨️ Print now</button>
+    <div class="status" id="status"></div>
+  </div>
+  <footer>Instant office printing · no login needed</footer>
+</div>
+<script>
+const q = new URLSearchParams(location.search);
+const office = q.get('office') || '', printer = q.get('printer') || '';
+let copies = 1, color = false, file = null;
+document.getElementById('printerPill').textContent = office && printer ? `📍 ${office} · ${printer}` : '⚠️ Open this page via the printer QR code';
+const drop = document.getElementById('drop'), fi = document.getElementById('file');
+drop.onclick = () => fi.click();
+fi.onchange = () => pick(fi.files[0]);
+['dragover','dragenter'].forEach(e => drop.addEventListener(e, ev => {ev.preventDefault();drop.classList.add('over')}));
+['dragleave','drop'].forEach(e => drop.addEventListener(e, ev => {ev.preventDefault();drop.classList.remove('over')}));
+drop.addEventListener('drop', ev => pick(ev.dataTransfer.files[0]));
+function pick(f){ if(!f) return; file = f; document.getElementById('fname').textContent = `${f.name} (${(f.size/1024).toFixed(0)} KB)`; }
+function chCopies(d){ copies = Math.min(50, Math.max(1, copies + d)); document.getElementById('copies').textContent = copies; }
+function setColor(c){ color = c; document.getElementById('bwBtn').classList.toggle('sel', !c); document.getElementById('cBtn').classList.toggle('sel', c); }
+function say(cls, msg){ const s = document.getElementById('status'); s.className = 'status show ' + cls; s.innerHTML = msg; }
+async function send(){
+  if(!office || !printer) return say('err','❌ Missing office/printer — scan the QR again.');
+  if(!file) return say('err','❌ Choose a file first.');
+  say('working','⏳ Uploading…');
+  document.getElementById('go').disabled = true;
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('officeCode', office); fd.append('printerId', printer);
+  fd.append('copies', copies); fd.append('color', color ? 'color' : 'bw');
+  fd.append('sender', document.getElementById('sender').value || 'Guest');
+  try{
+    const r = await fetch('/api/jobs', { method:'POST', body: fd });
+    const d = await r.json();
+    if(!r.ok) throw new Error(d.error || 'Upload failed');
+    watch(d.job.id);
+  }catch(e){ say('err','❌ ' + e.message); document.getElementById('go').disabled = false; }
+}
+async function watch(id){
+  say('working',`⏳ <b>Queued.</b> The printer PC picks it up in seconds…<br><span class="muted small">Job ${id}</span>`);
+  for(let i=0;i<60;i++){
+    await new Promise(r=>setTimeout(r,2000));
+    try{
+      const r = await fetch('/api/jobs/'+id); const j = await r.json();
+      if(j.status==='printing') say('working','🖨️ <b>Printing…</b> walk to the printer and collect your papers.');
+      if(j.status==='printed'){ say('done','✅ <b>Ready for pickup!</b> Your papers are at the printer.'); break; }
+      if(j.status==='failed'){ say('err','❌ Print failed: '+(j.message||'printer error')+'. Ask staff for help.'); break; }
+    }catch(_){}
+  }
+  document.getElementById('go').disabled = false;
+}
+</script>
+</body>
+</html>
